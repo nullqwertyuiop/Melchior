@@ -10,14 +10,11 @@ from ichika.login import PathCredentialStore
 from launart import Launart, Launchable
 from loguru import logger
 
-from library.core._config import init_kayaku
-
 
 class MelchiorServiceEssential(Launchable):
     id = "melchior.service/essential"
 
     def __init__(self):
-        init_kayaku()
         self._init_ichika()
         self._saya_require(Path("library") / "module")
         super().__init__()
@@ -40,8 +37,12 @@ class MelchiorServiceEssential(Launchable):
 
     @staticmethod
     def _init_ichika():
+        kayaku.initialize({"{**}": "./config/{**}"})
+
         from library.core._ctx import launch_manager
         from library.model.config import MelchiorConfig
+
+        kayaku.create(MelchiorConfig)
 
         mgr = launch_manager.get()
         ick = IchikaComponent(
