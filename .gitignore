@@ -163,4 +163,8 @@ cython_debug/
 .pdm-python
 
 # Melchior-related
-config/
+melchior/*
+!melchior/__init__.py
+!melchior/main.py
+!melchior/library
+!melchior/daemon

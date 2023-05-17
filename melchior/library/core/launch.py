@@ -1,9 +1,9 @@
 from creart import it
 from graia.broadcast import Broadcast
 
-from library.core._ctx import launch_manager
-from library.core.service.data import MelchiorServiceData
-from library.core.service.essential import MelchiorServiceEssential
+from melchior.library.core._ctx import launch_manager
+from melchior.library.core.service.data import MelchiorServiceData
+from melchior.library.core.service.essential import MelchiorServiceEssential
 
 
 def launch():

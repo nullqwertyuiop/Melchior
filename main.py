@@ -1,3 +1,3 @@
-from library.core.launch import launch
+from melchior.daemon import run
 
-launch()
+run()
