@@ -1,5 +1,4 @@
 import pkgutil
-from datetime import time
 from pathlib import Path
 
 import kayaku
@@ -17,7 +16,6 @@ class MelchiorServiceEssential(Launchable):
 
     def __init__(self):
         self._init_ichika()
-        self._setup_logger()
         self._saya_require(Path("library") / "module")
         super().__init__()
 
@@ -41,8 +39,8 @@ class MelchiorServiceEssential(Launchable):
     def _init_ichika():
         kayaku.initialize({"{**}": "./config/{**}"})
 
-        from melchior.library.core._ctx import launch_manager
-        from melchior.library.model.config import MelchiorConfig
+        from library.core._ctx import launch_manager
+        from library.model.config import MelchiorConfig
 
         kayaku.create(MelchiorConfig)
 
@@ -61,32 +59,12 @@ class MelchiorServiceEssential(Launchable):
 
         mgr.add_launchable(ick)
 
-    @staticmethod
-    def _setup_logger():
-        from melchior.library.model.config import MelchiorConfig
-
-        config: MelchiorConfig = kayaku.create(MelchiorConfig)
-        logger.add(
-            Path("log", "{time:YYYY-MM-DD}", "common.log"),
-            level="INFO",
-            retention=f"{config.log_rotate} days" if config.log_rotate else None,
-            encoding="utf-8",
-            rotation=time(),
-        )
-        logger.add(
-            Path("log", "{time:YYYY-MM-DD}", "error.log"),
-            level="ERROR",
-            retention=f"{config.log_rotate} days" if config.log_rotate else None,
-            encoding="utf-8",
-            rotation=time(),
-        )
-
     async def launch(self, _: Launart):
         async with self.stage("preparing"):
             kayaku.bootstrap()
             kayaku.save_all()
-            logger.success(f"[{self.id}] 已保存配置文件")
+            logger.success("[MelchiorService] 已保存配置文件")
 
         async with self.stage("cleanup"):
             kayaku.save_all()
-            logger.success(f"[{self.id}] 已保存配置文件")
+            logger.success("[MelchiorService] 已保存配置文件")
