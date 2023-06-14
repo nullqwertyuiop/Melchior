@@ -163,4 +163,8 @@ cython_debug/
 .pdm-python
 
 # Melchior-related
-config/
+melchior/config
+melchior/log
+melchior/.gitignore
+melchior/pdm.lock
+melchior/pyproject.toml

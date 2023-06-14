@@ -39,12 +39,11 @@ class MelchiorServiceEssential(Launchable):
     def _init_ichika():
         kayaku.initialize({"{**}": "./config/{**}"})
 
-        from library.core._ctx import launch_manager
-        from library.model.config import MelchiorConfig
+        from melchior.library.model.config import MelchiorConfig
 
         kayaku.create(MelchiorConfig)
 
-        mgr = launch_manager.get()
+        mgr = it(Launart)
         ick = IchikaComponent(
             PathCredentialStore(Path("config") / "bots"), it(Broadcast)
         )
@@ -59,7 +58,7 @@ class MelchiorServiceEssential(Launchable):
 
         mgr.add_launchable(ick)
 
-    async def launch(self, _: Launart):
+    async def launch(self, manager: Launart):
         async with self.stage("preparing"):
             kayaku.bootstrap()
             kayaku.save_all()
@@ -68,3 +67,9 @@ class MelchiorServiceEssential(Launchable):
         async with self.stage("cleanup"):
             kayaku.save_all()
             logger.success("[MelchiorService] 已保存配置文件")
+
+
+def launch():
+    mgr = it(Launart)
+    mgr.add_launchable(MelchiorServiceEssential())
+    mgr.launch_blocking(loop=it(Broadcast).loop)
