@@ -12,7 +12,7 @@ class GenericResponse(BaseModel):
     """ Response type. """
     message: str
     """ Response message. """
-    data: dict
+    data: dict | None = None
     """ Response data. """
 
 

@@ -1,9 +1,11 @@
 import asyncio
+import contextlib
 import os
 import random
 import signal
 import string
 import subprocess
+import sys
 import time
 
 from creart import it
@@ -15,6 +17,7 @@ from loguru import logger
 from psutil import Process
 from starlette.middleware.cors import CORSMiddleware
 
+from melchior.shared import GenericSuccessResponse
 from melchior.shared.util import setup_logger
 from melchior.shared.var import MELCHIOR_ROOT
 
@@ -44,6 +47,13 @@ async def regen_token(token: str):
     if token != TOKEN:
         raise HTTPException(403, "Invalid token")
     logger.info("Daemon Command received: regen_token")
+    setup_token()
+    return GenericSuccessResponse(
+        code=200,
+        type="success",
+        message="Token regenerated",
+        data={"token": TOKEN},
+    )
 
 
 @fastapi.get("/daemon/shutdown")
@@ -52,8 +62,19 @@ async def daemon_shutdown(token: str):
         raise HTTPException(403, "Invalid token")
     logger.info("Daemon Command received: shutdown")
     proc_manager.keep_alive = False
-    proc_manager.shutdown()
-    signal.raise_signal(signal.SIGINT)
+    with contextlib.suppress(MelchiorNotRunning):
+        proc_manager.shutdown()
+    loop = asyncio.get_running_loop()
+    loop.call_later(
+        1,
+        signal.raise_signal,
+        signal.SIGINT if sys.platform != "win32" else signal.CTRL_C_EVENT,
+    )
+    return GenericSuccessResponse(
+        code=200,
+        type="success",
+        message="Daemon shutdown",
+    )
 
 
 @fastapi.get("/command/shutdown")
@@ -62,7 +83,15 @@ async def shutdown(token: str):
         raise HTTPException(403, "Invalid token")
     logger.info("Command received: shutdown")
     proc_manager.keep_alive = False
-    proc_manager.shutdown()
+    try:
+        proc_manager.shutdown()
+    except MelchiorNotRunning as e:
+        raise HTTPException(400, "Melchior not running") from e
+    return GenericSuccessResponse(
+        code=200,
+        type="success",
+        message="Melchior shutdown",
+    )
 
 
 @fastapi.get("/command/boot")
@@ -71,7 +100,15 @@ async def boot(token: str, keep_alive: bool = True):
         raise HTTPException(403, "Invalid token")
     logger.info("Command received: boot")
     proc_manager.keep_alive = keep_alive
-    proc_manager.boot()
+    try:
+        proc_manager.boot()
+    except MelchiorAlreadyRunning as e:
+        raise HTTPException(400, "Melchior already running") from e
+    return GenericSuccessResponse(
+        code=200,
+        type="success",
+        message="Melchior booted",
+    )
 
 
 @fastapi.get("/command/reboot")
@@ -80,7 +117,15 @@ async def restart(token: str, keep_alive: bool = True):
         raise HTTPException(403, "Invalid token")
     logger.info("Command received: restart")
     proc_manager.keep_alive = keep_alive
-    proc_manager.restart()
+    try:
+        proc_manager.restart()
+    except MelchiorNotRunning as e:
+        raise HTTPException(400, "Melchior not running") from e
+    return GenericSuccessResponse(
+        code=200,
+        type="success",
+        message="Melchior restarted",
+    )
 
 
 class MelchiorAlreadyRunning(Exception):
@@ -123,7 +168,9 @@ class ProcessManager:
     def shutdown(self):
         if self.proc is None or not self.proc.is_running():
             raise MelchiorNotRunning()
-        self.proc.send_signal(signal.SIGINT)
+        self.proc.send_signal(
+            signal.SIGINT if sys.platform != "win32" else signal.CTRL_C_EVENT
+        )
         self.proc.wait()
         self.proc = None
 
