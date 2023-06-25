@@ -181,11 +181,12 @@ class ProcessManager:
     def keep(self):
         if self.proc is None or not self.proc.is_running():
             self.check_and_add_attempt()
+            if not self.keep_alive:
+                return
             logger.warning("[MelchiorDaemon] Melchior 未运行，正在启动...")
             self.boot()
 
     def check_and_add_attempt(self):
-        self.attempts.append(time.time())
         attempts_one_minute = [
             attempt for attempt in self.attempts if attempt > time.time() - 60
         ]
@@ -194,6 +195,7 @@ class ProcessManager:
             logger.critical("[MelchiorDaemon] Melchior 短时间内重启次数过多，已停止自动重启")
             logger.critical("[MelchiorDaemon] 请检查 Melchior 是否出现问题")
         self.attempts = attempts_one_minute
+        self.attempts.append(time.time())
 
 
 proc_manager = ProcessManager()
